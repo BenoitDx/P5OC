@@ -190,7 +190,10 @@ body {
 	justify-content: space-between;
 	z-index: 1;
 }
-
+.price {
+	font-size: 1.5rem;
+	margin-bottom: 2px;
+}
 #contact {
 	margin: auto;
 	background-color: #D8D3A8 ;
@@ -244,7 +247,9 @@ input[type="submit"] {
 	background-color: #BEB45A;
 	padding: .5em 1em
 }
-
+.carousel-item>figure {
+	margin: 0;
+}
 @media all and (max-width: 1180px) {
 	.picture {
 		flex : 2;
