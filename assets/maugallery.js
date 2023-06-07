@@ -64,6 +64,21 @@
     $(".gallery").on("click", ".mg-next", () =>
       $.fn.mauGallery.methods.nextImage(options.lightboxId)
     );
+    $(".gallery").on("click", ".mg-close", () =>
+      $(`#${options.lightboxId}`).modal("toggle")
+    );
+
+    /* ajout de l'écouteur de l'appuie sur al touche entrée */
+    $(".gallery-item").on("keydown", function(e) {
+      if (e.key == 'Enter') {
+        if (options.lightBox && $(this).prop("tagName") === "IMG") {
+          $.fn.mauGallery.methods.openLightBox($(this), options.lightboxId);
+        } else {
+          return;
+        }
+      }
+    });
+
   };
   $.fn.mauGallery.methods = {
     createRowWrapper(element) {
@@ -73,13 +88,14 @@
           .first()
           .hasClass("row")
       ) {
+        element.append('<p class="interact-help">Vous pouvez cliquer sur les images pour les agrandir.</p>')
         element.append('<div class="gallery-items-row row"></div>');
       }
     },
     wrapItemInColumn(element, columns) {
       if (columns.constructor === Number) {
         element.wrap(
-          `<div class='item-column mb-4 col-${Math.ceil(12 / columns)}'></div>`
+          `<figure class='item-column mb-4 col-${Math.ceil(12 / columns)}'></figure>`
         );
       } else if (columns.constructor === Object) {
         var columnClasses = "";
@@ -98,7 +114,7 @@
         if (columns.xl) {
           columnClasses += ` col-xl-${Math.ceil(12 / columns.xl)}`;
         }
-        element.wrap(`<div class='item-column mb-4${columnClasses}'></div>`);
+        element.wrap(`<figure class='item-column mb-4${columnClasses}'></figure>`);
       } else {
         console.error(
           `Columns should be defined as numbers or objects. ${typeof columns} is not supported.`
@@ -116,7 +132,8 @@
     openLightBox(element, lightboxId) {
       $(`#${lightboxId}`)
         .find(".lightboxImage")
-        .attr("src", element.attr("src"));
+        .attr("src", element.attr("src"))
+        .attr("alt", element.attr("alt"));
       $(`#${lightboxId}`).modal("toggle");
     },
     prevImage() {
@@ -126,7 +143,7 @@
           activeImage = $(this);
         }
       });
-      let activeTag = $(".tags-bar span.active-tag").data("images-toggle");
+      let activeTag = $(".tags-bar button.active-tag").data("images-toggle");
       let imagesCollection = [];
       if (activeTag === "all") {
         $(".item-column").each(function() {
@@ -152,11 +169,13 @@
         if ($(activeImage).attr("src") === $(this).attr("src")) {
           index = i ;
         }
+        index--
       });
       next =
         imagesCollection[index] ||
         imagesCollection[imagesCollection.length - 1];
       $(".lightboxImage").attr("src", $(next).attr("src"));
+      $(".lightboxImage").attr("alt", $(next).attr("alt"));
     },
     nextImage() {
       let activeImage = null;
@@ -165,7 +184,7 @@
           activeImage = $(this);
         }
       });
-      let activeTag = $(".tags-bar span.active-tag").data("images-toggle");
+      let activeTag = $(".tags-bar button.active-tag").data("images-toggle");
       let imagesCollection = [];
       if (activeTag === "all") {
         $(".item-column").each(function() {
@@ -189,14 +208,20 @@
 
       $(imagesCollection).each(function(i) {
         if ($(activeImage).attr("src") === $(this).attr("src")) {
+
           index = i;
         }
       });
+
+      /* increment index */
+      index++;
+      
       next = imagesCollection[index] || imagesCollection[0];
       $(".lightboxImage").attr("src", $(next).attr("src"));
+      $(".lightboxImage").attr("alt", $(next).attr("alt"));
     },
     createLightBox(gallery, lightboxId, navigation) {
-      gallery.append(`<div class="modal fade" id="${
+      gallery.append(`<aside class="modal fade" id="${
         lightboxId ? lightboxId : "galleryLightbox"
       }" tabindex="-1" role="dialog" aria-hidden="true">
                 <div class="modal-dialog" role="document">
@@ -204,26 +229,31 @@
                         <div class="modal-body">
                             ${
                               navigation
-                                ? '<div class="mg-prev" style="cursor:pointer;position:absolute;top:50%;left:-15px;background:white;"><</div>'
+                                ? '<button class="mg-prev" style="cursor:pointer;position:absolute;top:50%;left:-15px;background:white;"><</button>'
                                 : '<span style="display:none;" />'
                             }
                             <img class="lightboxImage img-fluid" alt="Contenu de l'image affichée dans la modale au clique"/>
                             ${
                               navigation
-                                ? '<div class="mg-next" style="cursor:pointer;position:absolute;top:50%;right:-15px;background:white;}">></div>'
+                                ? '<button class="mg-next" style="cursor:pointer;position:absolute;top:50%;right:-15px;background:white;}">></button>'
+                                : '<span style="display:none;" />'
+                            }
+                            ${
+                              navigation
+                                ? '<button class="mg-close" style="cursor:pointer;position:absolute;top:-15px;right:-15px;background:white;">x</button>'
                                 : '<span style="display:none;" />'
                             }
                         </div>
                     </div>
                 </div>
-            </div>`);
+            </aside>`);
     },
     showItemTags(gallery, position, tags) {
       var tagItems =
-        '<li class="nav-item"><span class="nav-link active active-tag"  data-images-toggle="all">Tous</span></li>';
+        '<li class="nav-item"><button class="nav-link active active-tag"  data-images-toggle="all">Tous</button></li>';
       $.each(tags, function(index, value) {
         tagItems += `<li class="nav-item active">
-                <span class="nav-link"  data-images-toggle="${value}">${value}</span></li>`;
+                <button class="nav-link"  data-images-toggle="${value}">${value}</button></li>`;
       });
       var tagsRow = `<ul class="my-4 tags-bar nav nav-pills">${tagItems}</ul>`;
 
@@ -240,6 +270,7 @@
         return;
       }
       $(".active-tag").removeClass("active active-tag");
+      $(this).addClass("active");
       $(this).addClass("active-tag");
 
       var tag = $(this).data("images-toggle");
